@@ -126,7 +126,9 @@ export const getRideById = async (req, res) => {
       .populate("riderId", "name phone")
       .populate("driverId", "name vehicleModel vehicleNumber vehicleColor");
 
-    if (!ride) return res.status(404).json({ error: "Ride not found" });
+    if (!ride) {
+      return res.status(404).json({ error: "Ride not found" });
+    }
 
     const userId = req.user.userId;
     const isRider = ride.riderId?._id.toString() === userId;
@@ -146,6 +148,59 @@ export const getRideById = async (req, res) => {
     }
 
     res.status(200).json({ ride: rideObj });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateOfferedFare = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { offeredFare } = req.body;
+    const ride = await Ride.findById(id);
+
+    if (!ride) {
+      return res.status(404).json({ error: "Ride not found" });
+    }
+
+    // Only the rider who created the ride can change the fare
+    if (ride.riderId.toString() !== req.user.userId) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to modify this ride's fare" });
+    }
+
+    // Cannot change fare after a driver has already accepted it
+    if (ride.status !== "requested") {
+      return res
+        .status(409)
+        .json({ error: "Cannot adjust fare once a driver has accepted" });
+    }
+
+    if (typeof offeredFare !== "number" || isNaN(offeredFare)) {
+      return res.status(400).json({ error: "Invalid fare amount" });
+    }
+
+    // Enforce the floor price
+    if (offeredFare < ride.baseFare) {
+      return res
+        .status(400)
+        .json({
+          error: `Offered fare cannot be below base fare (₹${ride.baseFare})`,
+        });
+    }
+
+    // Enforce the ₹10 increment step
+    if ((offeredFare - ride.baseFare) % 10 !== 0) {
+      return res
+        .status(400)
+        .json({ error: "Fare increments must be in steps of ₹10" });
+    }
+
+    ride.offeredFare = offeredFare;
+    await ride.save();
+
+    res.status(200).json({ ride });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Ride from "../models/Ride.js";
+import { getRoute } from "../lib/osrm.js";
 
 export const updateVehicleInfo = async (req, res) => {
   try {
@@ -30,12 +31,9 @@ export const updateDriverStatus = async (req, res) => {
         !driver.vehicleNumber ||
         !driver.vehicleColor
       ) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Add your bike's model, number and color before going online",
-          });
+        return res.status(400).json({
+          error: "Add your bike's model, number and color before going online",
+        });
       }
     }
 
@@ -85,6 +83,7 @@ export const getNearbyRides = async (req, res) => {
 export const acceptRide = async (req, res) => {
   try {
     const { id } = req.params;
+    const driver = await User.findById(req.user.userId);
 
     // Atomic: only updates if status is STILL "requested" at the exact moment of this query
     const ride = await Ride.findOneAndUpdate(
@@ -98,6 +97,21 @@ export const acceptRide = async (req, res) => {
       return res
         .status(409)
         .json({ error: "This ride is no longer available" });
+    }
+
+    // Best-effort: never let a slow/down OSRM block the accept itself —
+    // the driver still gets the ride, just without a route line yet.
+    if (driver?.location?.coordinates) {
+      try {
+        const { polyline } = await getRoute(
+          driver.location.coordinates,
+          ride.pickup.coordinates,
+        );
+        ride.routeToPickup = polyline;
+        await ride.save();
+      } catch (routeErr) {
+        console.error("Failed to compute routeToPickup:", routeErr.message);
+      }
     }
 
     res.status(200).json({ ride });

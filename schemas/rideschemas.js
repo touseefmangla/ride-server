@@ -29,3 +29,7 @@ export const vehicleInfoSchema = z.object({
   vehicleNumber: z.string().trim().min(1, "Vehicle number is required"),
   vehicleColor: z.string().trim().min(1, "Vehicle color is required"),
 });
+
+export const updateOfferedFareSchema = z.object({
+  offeredFare: z.number(),
+});

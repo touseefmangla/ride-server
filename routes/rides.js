@@ -1,18 +1,22 @@
 import express from "express";
-import { createRide } from "../controllers/rideController.js";
 import { getNearbyRides, acceptRide } from "../controllers/driverController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { validate } from "../lib/validate.js";
 import { createRideSchema } from "../schemas/rideschemas.js";
 import {
+  createRide,
   arriveRide,
   startRide,
   completeRide,
   cancelRide,
   getRideById,
+  updateOfferedFare,
 } from "../controllers/rideController.js";
-import { rideIdParamSchema } from "../schemas/rideschemas.js";
+import {
+  rideIdParamSchema,
+  updateOfferedFareSchema,
+} from "../schemas/rideschemas.js";
 import { validateParams } from "../lib/validate.js";
 
 const router = express.Router();
@@ -25,6 +29,18 @@ router.post(
   createRide,
 );
 router.get("/nearby", requireAuth, requireRole("driver"), getNearbyRides);
+
+router.get("/:id", requireAuth, validateParams(rideIdParamSchema), getRideById);
+
+router.patch(
+  "/:id/offer",
+  requireAuth,
+  requireRole("rider"),
+  validateParams(rideIdParamSchema),
+  validate(updateOfferedFareSchema),
+  updateOfferedFare,
+);
+
 router.patch("/:id/accept", requireAuth, requireRole("driver"), acceptRide);
 
 router.patch(
@@ -54,7 +70,5 @@ router.patch(
   validateParams(rideIdParamSchema),
   cancelRide,
 );
-router.get("/nearby", requireAuth, requireRole("driver"), getNearbyRides);
-router.get("/:id", requireAuth, validateParams(rideIdParamSchema), getRideById);
 
 export default router;

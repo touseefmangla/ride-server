@@ -25,6 +25,7 @@ const rideSchema = new mongoose.Schema(
     distanceKm: { type: Number, required: true },
     baseFare: { type: Number, required: true },
     offeredFare: { type: Number, required: true },
+    routeToPickup: { type: [[Number]], default: undefined },
     status: {
       type: String,
       enum: [
