@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 const PAKISTANI_PHONE_REGEX = /^(?:\+92|0)3\d{9}$/;
-const roleEnum = z.enum(["rider", "driver"], {
-  errorMap: () => ({ message: "Role must be rider or driver" }),
+const roleEnum = z.enum(["Rider", "Driver"], {
+  errorMap: () => ({ message: "Role must be Rider or Driver" }),
 });
 
 export const signupSchema = z.object({
