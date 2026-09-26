@@ -7,8 +7,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, select: false }, // Not required (Google users lack this)
     googleId: { type: String, unique: true, sparse: true },
     phone: { type: String, unique: true, sparse: true },
-    roles: [{ type: String, enum: ["rider", "driver"] }],
-    activeRole: { type: String, enum: ["rider", "driver"], required: true },
+    roles: [{ type: String, enum: ["Rider", "Driver"] }],
+    activeRole: { type: String, enum: ["Rider", "Driver"], required: true },
     location: {
       type: { type: String, enum: ["Point"] },
       coordinates: { type: [Number] },
